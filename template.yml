@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: SAM Template to create a Lambda, DynamoDB table, and API Gateway
+
+Resources:
+
+  MyDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MyDynamoDBTable
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  MyLambdaFunctionTwo:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./handlers/
+      Handler: first.handler
+      Runtime: nodejs16.x
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Layers:
+        - arn:aws:lambda:us-west-2:395815026617:layer:shared_Node_Modules:5
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref MyDynamoDBTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /insert
+            Method: POST
+            RestApiId: 
+              Ref: MyApi
+
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
